@@ -6,8 +6,7 @@ Use A Resampling-Based Empirical Bayes Approach to Assess Differential Expressio
 Bioconductor version: Release (3.9)  
 Author: Dongmei Li and Chin-Yuan Liang  
 Maintainer: Dongmei Li <Dongmei_Li@urmc.rochester.edu>  
-
-[RBM on Bioconductor](https://bioconductor.org/packages/release/bioc/html/RBM.html)
+Package repository: [view on Bioconductor](https://bioconductor.org/packages/release/bioc/html/RBM.html)
 
 **Citation** (from within R, enter citation("RBM")):
 >Li D, Liang C (2019). RBM: RBM: a R package for microarray and RNA-Seq data analysis. R package version 1.16.0.
