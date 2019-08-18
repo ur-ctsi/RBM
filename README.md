@@ -10,7 +10,7 @@ Maintainer: Dongmei Li <Dongmei_Li at urmc.rochester.edu>
 **Citation** (from within R, enter citation("RBM")):
 >Li D, Liang C (2019). RBM: RBM: a R package for microarray and RNA-Seq data analysis. R package version 1.16.0.
 
-**Installation**
+## Installation
 To install this package, start R (version "3.6") and enter:
 ```
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -20,7 +20,7 @@ BiocManager::install("RBM")
 
 For older versions of R, please refer to the appropriate Bioconductor release.
 
-**Documentation**
+## Documentation
 To view documentation for the version of this package installed in your system, start R and enter:
 ```
 browseVignettes("RBM")
