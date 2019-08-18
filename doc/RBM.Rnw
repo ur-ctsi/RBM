@@ -1,0 +1,205 @@
+%\VignetteIndexEntry{RBM}
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,epsfig,fullpage,hyperref}
+\usepackage{underscore}
+\parindent 0in
+
+%\newcommand{\Robject}[1]{{\texttt{#1}}}
+%\newcommand{\Rfunction}[1]{{\texttt{#1}}}
+%\newcommand{\Rpackage}[1]{{\textit{#1}}}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\title{\bf Introduction to RBM package}
+
+\author{Dongmei Li}
+
+\maketitle
+
+\begin{center}
+Clinical and Translational Science Institute, University of Rochester School of Medicine and Dentistry, Rochester, NY 14642-0708\\
+\end{center}
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview}
+
+This document provides an introduction to the {\tt RBM} package. The {\tt RBM} package executes the resampling-based empirical Bayes approach using either permutation or bootstrap tests based on moderated t-statistics through the following steps.
+
+\begin{itemize}
+\item Firstly, the RBM package computes the moderated t-statistics based on the observed data set for each feature using the lmFit and eBayes function.
+\item Secondly, the original data are permuted or bootstrapped in a way that matches the null hypothesis to generate permuted or bootstrapped resamples, and the reference distribution is constructed using the resampled moderated t-statistics calculated from permutation or bootstrap resamples.
+\item Finally, the p-values from permutation or bootstrap tests are calculated based on the proportion of the permuted or bootstrapped moderated t-statistics that are as extreme as, or more extreme than, the observed moderated t-statistics.
+\end{itemize}
+
+Additional detailed information regarding resampling-based empirical Bayes approach can be found elsewhere (Li et al., 2013).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Getting started}
+
+The {\tt RBM} package can be installed and loaded through the following R code.
+
+Install the {\tt RBM} package with:
+%code 1
+<<eval=FALSE, echo=TRUE>>=
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("RBM")
+@
+
+Load the {\tt RBM} package with:
+
+%code 2
+<<eval=FALSE, echo=TRUE>>=
+library(RBM)
+@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{{\tt RBM_T} and {\tt RBM_F} functions}
+
+There are two functions in the {\tt RBM} package: {\tt RBM_T} and {\tt RBM_F}. Both functions require input data in the matrix format with rows denoting features and columns denoting samples. {\tt RBM_T} is used for two-group comparisons such as study designs with a treatment group and a control group. {\tt RBM_F} can be used for more complex study designs such as more than two groups or time-course studies. Both functions need a vector for group notation, i.e., "1" denotes the treatment group and "0" denotes the control group. For the {\tt RBM_F} function, a contrast vector need to be provided by users to perform pairwise comparisons between groups. For example, if the design has three groups (0, 1, 2), the aContrast parameter will be a vector such as ("X1-X0", "X2-X1", "X2-X0") to denote all pairwise comparisons. Users just need to add an extra "X" before the group labels to do the contrasts.
+
+\begin{itemize}
+
+\item Examples using the {\tt RBM_T} function: normdata simulates a standardized gene expression data and unifdata simulates a methylation microarray data. The \textit{p}-values from the {\tt RBM_T} function could be further adjusted using the {\tt p.adjust} function in the {\tt stats} package through the Bejamini-Hochberg method.
+
+%code 3
+<<eval=TRUE, echo=TRUE>>=
+library(RBM)
+normdata <- matrix(rnorm(1000*6, 0, 1),1000,6)
+mydesign <- c(0,0,0,1,1,1)
+myresult <- RBM_T(normdata,mydesign,100,0.05)
+summary(myresult)
+sum(myresult$permutation_p<=0.05)
+  
+which(myresult$permutation_p<=0.05)
+
+sum(myresult$bootstrap_p<=0.05)
+
+which(myresult$bootstrap_p<=0.05)
+permutation_adjp <- p.adjust(myresult$permutation_p, "BH")
+sum(permutation_adjp<=0.05)
+bootstrap_adjp <- p.adjust(myresult$bootstrap_p, "BH")
+sum(bootstrap_adjp<=0.05)
+@
+
+% Code 4
+<<eval=TRUE, echo=TRUE>>=
+unifdata <- matrix(runif(1000*7,0.10, 0.95), 1000, 7)
+mydesign2 <- c(0,0,0, 1,1,1,1)
+myresult2 <- RBM_T(unifdata,mydesign2,100,0.05)
+sum(myresult2$permutatioin_p<=0.05)
+sum(myresult2$bootstrap_p<=0.05)
+which(myresult2$bootstrap_p<=0.05)
+bootstrap2_adjp <- p.adjust(myresult2$bootstrap_p, "BH")
+sum(bootstrap2_adjp<=0.05)
+@
+
+\item Examples using the {\tt RBM_F} function: normdata_F simulates a standardized gene expression data and unifdata_F simulates a methylation microarray data. In both examples, we were interested in pairwise comparisons.
+
+%code 5
+<<eval=TRUE, echo=TRUE>>=
+normdata_F <- matrix(rnorm(1000*9,0,2), 1000, 9)
+mydesign_F <- c(0, 0, 0, 1, 1, 1, 2, 2, 2)
+aContrast <- c("X1-X0", "X2-X1", "X2-X0")
+
+myresult_F <- RBM_F(normdata_F, mydesign_F, aContrast, 100, 0.05)
+summary(myresult_F)
+sum(myresult_F$permutation_p[, 1]<=0.05)
+sum(myresult_F$permutation_p[, 2]<=0.05)
+sum(myresult_F$permutation_p[, 3]<=0.05)
+
+which(myresult_F$permutation_p[, 1]<=0.05)
+which(myresult_F$permutation_p[, 2]<=0.05)
+which(myresult_F$permutation_p[, 3]<=0.05)
+    
+con1_adjp <- p.adjust(myresult_F$permutation_p[, 1], "BH")
+sum(con1_adjp<=0.05/3)
+  
+con2_adjp <- p.adjust(myresult_F$permutation_p[, 2], "BH")
+sum(con2_adjp<=0.05/3)
+
+con3_adjp <- p.adjust(myresult_F$permutation_p[, 3], "BH")
+sum(con3_adjp<=0.05/3)
+
+which(con2_adjp<=0.05/3)
+
+which(con3_adjp<=0.05/3)
+@
+
+%code 6
+<<eval=TRUE, echo=TRUE>>=
+unifdata_F <- matrix(runif(1000*18, 0.15, 0.98), 1000, 18)
+mydesign2_F <- c(rep(0, 6), rep(1, 6), rep(2, 6))
+aContrast <- c("X1-X0", "X2-X1", "X2-X0")
+
+myresult2_F <- RBM_F(unifdata_F, mydesign2_F, aContrast, 100, 0.05)
+summary(myresult2_F)
+
+sum(myresult2_F$bootstrap_p[, 1]<=0.05)
+  
+sum(myresult2_F$bootstrap_p[, 2]<=0.05)
+
+sum(myresult2_F$bootstrap_p[, 3]<=0.05)
+
+which(myresult2_F$bootstrap_p[, 1]<=0.05)
+
+which(myresult2_F$bootstrap_p[, 2]<=0.05)
+ 
+which(myresult2_F$bootstrap_p[, 3]<=0.05)
+ 
+con21_adjp <- p.adjust(myresult2_F$bootstrap_p[, 1], "BH")
+sum(con21_adjp<=0.05/3)
+
+con22_adjp <- p.adjust(myresult2_F$bootstrap_p[, 2], "BH")
+sum(con22_adjp<=0.05/3)
+
+con23_adjp <- p.adjust(myresult2_F$bootstrap_p[, 3], "BH")
+sum(con23_adjp<=0.05/3)
+@
+\end{itemize}
+
+\section{Ovarian cancer methylation example using the {\tt RBM_T} function}
+
+Two-group comparisons are the most common contrast in biological and biomedical field. The ovarian cancer methylation example is used to illustrate the application of {\tt RBM_T} in identifying differentially methylated loci. The ovarian cancer methylation example is taken from the gemone-wide DNA methylation profiling of United Kingdom Ovarian Cancer Population Study (UKOPS). This study used Illumina Infinium 27k Human DNA methylation Beadchip v1.2 to obtain DNA methylation profiles on over 27,000 CpGs in whole blood cells from 266 ovarian cancer women and 274 age-matched healthy controls. The data are downloaded from the NCBI GEO website with access number GSE19711. For illutration purpose, we chose the first 1000 loci in 8 randomly selected women with 4 ovariance cancer cases (pre-treatment) and 4 healthy controls. The following codes show the process of generating significant differential DNA methylation loci using the {\tt RBM_T} function and presenting the results for further validation and investigations.
+
+%code 7
+<<eval=TRUE, echo=TRUE>>=
+system.file("data", package = "RBM")
+data(ovarian_cancer_methylation)
+summary(ovarian_cancer_methylation)
+ovarian_cancer_data <- ovarian_cancer_methylation[, -1]
+label <- c(1, 1, 0, 0, 1, 1, 0, 0)
+diff_results <- RBM_T(aData=ovarian_cancer_data, vec_trt=label, repetition=100, alpha=0.05)
+summary(diff_results)
+sum(diff_results$ordfit_pvalue<=0.05)
+sum(diff_results$permutation_p<=0.05)
+sum(diff_results$bootstrap_p<=0.05)
+
+ordfit_adjp <- p.adjust(diff_results$ordfit_pvalue, "BH")
+sum(ordfit_adjp<=0.05)
+perm_adjp <- p.adjust(diff_results$permutation_p, "BH")
+sum(perm_adjp<=0.05)
+boot_adjp <- p.adjust(diff_results$bootstrap_p, "BH")
+sum(boot_adjp<=0.05)
+
+diff_list_perm <- which(perm_adjp<=0.05)
+diff_list_boot <- which(boot_adjp<=0.05)
+sig_results_perm <- cbind(ovarian_cancer_methylation[diff_list_perm, ], diff_results$ordfit_t[diff_list_perm], diff_results$permutation_p[diff_list_perm])
+print(sig_results_perm)
+sig_results_boot <- cbind(ovarian_cancer_methylation[diff_list_boot, ], diff_results$ordfit_t[diff_list_boot], diff_results$bootstrap_p[diff_list_boot])
+print(sig_results_boot)
+@
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{\bf Note: Sweave.} This document was generated using the \Rfunction{Sweave}
+%function from the R \Rpackage{tools} package. The source file is in the
+%\Rfunction{/inst/doc} directory of the package \Rpackage{marray}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document} 

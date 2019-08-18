@@ -1,0 +1,2 @@
+import(limma, marray)
+export(RBM_T, RBM_F)
