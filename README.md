@@ -12,9 +12,10 @@ Maintainer: Dongmei Li <Dongmei_Li at urmc.rochester.edu>
 
 ## Installation
 To install this package, start R (version "3.6") and enter:
-```
+```R
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
+    
 BiocManager::install("RBM")
 ```
 
@@ -22,6 +23,6 @@ For older versions of R, please refer to the appropriate Bioconductor release.
 
 ## Documentation
 To view documentation for the version of this package installed in your system, start R and enter:
-```
+```R
 browseVignettes("RBM")
 ```
